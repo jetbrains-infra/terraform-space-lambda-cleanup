@@ -4,7 +4,7 @@ data "aws_s3_bucket" "this" {
 
 data "archive_file" "this" {
   source_file      = "${path.module}/source/lambda_function/main.py"
-  output_path      = "${var.name}-backup-bucket-cleanup.zip"
+  output_path      = "${path.module}_lambda_function_main.zip"
   output_file_mode = "0666"
   type             = "zip"
 }
