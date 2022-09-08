@@ -23,6 +23,9 @@ resource "aws_lambda_function" "this" {
       S3_BUCKET = data.aws_s3_bucket.this.id
     }
   }
+  tracing_config {
+    mode = "Active"
+  }
 }
 
 resource "aws_lambda_permission" "this" {
@@ -47,20 +50,18 @@ resource "aws_cloudwatch_event_target" "this" {
 resource "aws_iam_role" "this" {
   name = "${var.name}-backup-bucket-cleanup-role"
 
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow"
-    }
-  ]
-}
-EOF
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        },
+      }
+    ]
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_execution_role" {
@@ -70,26 +71,22 @@ resource "aws_iam_role_policy_attachment" "lambda_execution_role" {
 
 
 resource "aws_iam_role_policy" "this" {
-  name = "${var.name}-backup-bucket-cleanup-policy"
-  role = aws_iam_role.this.id
-
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListObjectVersions",
-        "s3:ListBucketVersions",
-        "s3:DeleteObjectVersion"
-      ],
-      "Resource": [
-        "${data.aws_s3_bucket.this.arn}",
-        "${data.aws_s3_bucket.this.arn}/*"
-      ]
-    }
-  ]
+  name   = "${var.name}-backup-bucket-cleanup-policy"
+  role   = aws_iam_role.this.id
+  policy = data.aws_iam_policy_document.this.json
 }
-EOF
+
+data "aws_iam_policy_document" "this" {
+  version = "2012-10-17"
+  statement {
+    actions = [
+      "s3:ListObjectVersions",
+      "s3:ListBucketVersions",
+      "s3:DeleteObjectVersion",
+    ]
+    resources = [
+      data.aws_s3_bucket.this.arn,
+      "${data.aws_s3_bucket.this.arn}/*",
+    ]
+  }
 }
