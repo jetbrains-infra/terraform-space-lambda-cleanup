@@ -1,2 +1,6 @@
-variable "name" {}
-variable "s3_bucket" {}
+variable "name" {
+  type = string
+}
+variable "s3_bucket" {
+  type = string
+}
