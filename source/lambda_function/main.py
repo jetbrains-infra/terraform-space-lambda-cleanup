@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 import boto3
 
 print("Loading function...")
-s3_bucket = os.environ.get("S3_BUCKET")
-print("Working with:", s3_bucket)
+S3_BUCKET = os.environ.get("S3_BUCKET")
+print("Working with:", S3_BUCKET)
 
 DATETIME_FORMAT = "%Y-%m-%d-%H%M%S/"
 
@@ -28,7 +28,7 @@ def get_objects(bucket, prefix):
     page_iterator = paginator.paginate(**operation_parameters)
 
     for page in page_iterator:
-        for obj in page["CommonPrefixes"]:
+        for obj in page.get("CommonPrefixes", []):
             result.add(obj["Prefix"].replace(prefix, ""))
     return result
 
@@ -70,7 +70,7 @@ def datetime_to_list(datetime_list, prefix):
 
 def delete_objects(object_list):
     """Cleanup S3 bucket"""
-    bucket = s3.Bucket(s3_bucket)
+    bucket = s3.Bucket(S3_BUCKET)
     for i in object_list:
         print("Deleting path:", i)
         bucket.object_versions.filter(Prefix=i).delete()
@@ -84,11 +84,18 @@ def lambda_handler(event, context):  # pylint: disable=W0613
     Returns:
         None
     """
-    path_prefix = ["circlet/", "vcs-dfs/"]
+    path_prefix = [
+        "circlet/",
+        "vcs-dfs/",
+        "circlet-prod-62-app-es-backup/",
+        "circlet-prod-audit-es-backup/",
+    ]
 
     filtered_candidats = []
     for prefix in path_prefix:
-        object_list = get_objects(s3_bucket, prefix)
+        object_list = get_objects(S3_BUCKET, prefix)
+        if len(object_list) == 0:
+            continue
         datetime_list = list_to_datetime(object_list)
         filtered_datetile_list = filter_date(datetime_list)
         filtered_object_list = datetime_to_list(filtered_datetile_list, prefix)
@@ -100,4 +107,4 @@ def lambda_handler(event, context):  # pylint: disable=W0613
 
 
 if __name__ == "__main__":
-    lambda_handler({}, "")
+    lambda_handler({}, {})
