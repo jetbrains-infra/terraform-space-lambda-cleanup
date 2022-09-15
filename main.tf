@@ -82,8 +82,13 @@ data "aws_iam_policy_document" "this" {
     actions = [
       "s3:ListObjectVersions",
       "s3:ListBucketVersions",
-      "s3:DeleteObjectVersion",
     ]
     resources = [data.aws_s3_bucket.this.arn]
+  }
+
+  statement {
+    actions = ["s3:DeleteObjectVersion"]
+    #tfsec:ignore:aws-iam-no-policy-wildcards
+    resources = ["${data.aws_s3_bucket.this.arn}/*"]
   }
 }

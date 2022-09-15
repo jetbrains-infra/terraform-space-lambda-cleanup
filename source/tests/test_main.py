@@ -18,7 +18,12 @@ def get_case_data(path):
         content = file.read().splitlines()
     input_list = []
     for i in content:
-        input_list.append(datetime.strptime(i, "%Y-%m-%d-%H:%M:%S"))
+        input_list.append(
+            {
+                "path": f"path/{i}/",
+                "datetime": datetime.strptime(i, "%Y-%m-%d-%H:%M:%S"),
+            }
+        )
     return input_list
 
 
